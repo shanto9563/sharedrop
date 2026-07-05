@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="description" content="ShareDrop – Secure peer-to-peer file sharing using WebRTC. No server storage. No file size limits.">
+<title>ShareDrop – P2P File Sharing</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════════════
+     LOADING SCREEN
+══════════════════════════════════════════════════════════ -->
+<div id="screen-loading" class="screen active">
+  <div class="loading-inner">
+    <div class="logo-anim">
+      <span class="logo-hex">⬡</span>
+      <span class="logo-name">ShareDrop</span>
+    </div>
+    <div class="loading-bar-wrap">
+      <div class="loading-bar"><div class="loading-fill"></div></div>
+    </div>
+    <p class="loading-hint">Initialising secure connection…</p>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     LANDING SCREEN
+══════════════════════════════════════════════════════════ -->
+<div id="screen-landing" class="screen">
+  <div class="landing-wrap">
+
+    <!-- Hero -->
+    <header class="hero">
+      <div class="hero-logo">
+        <span class="logo-hex glow">⬡</span>
+        <span class="hero-name">ShareDrop</span>
+      </div>
+      <p class="hero-sub">Direct browser-to-browser file sharing.<br>Encrypted. No uploads. Zero storage.</p>
+    </header>
+
+    <!-- Nickname card -->
+    <div class="card nick-card">
+      <label class="field-label">Your Nickname</label>
+      <div class="nick-row">
+        <span id="landing-avatar" class="user-avatar lg">🦊</span>
+        <input id="inp-nick" type="text" class="field-input" placeholder="Enter nickname…" maxlength="30" autocomplete="off">
+      </div>
+    </div>
+
+    <!-- Create / Join grid -->
+    <div class="landing-grid">
+
+      <!-- Create Room -->
+      <div class="card">
+        <h2 class="card-title"><span class="ct-icon create-icon">✦</span>Create Room</h2>
+        <div class="form-grp">
+          <label class="field-label">Room ID <span class="opt">(optional – auto-generated)</span></label>
+          <div class="input-addon">
+            <input id="inp-create-id" type="text" class="field-input mono" placeholder="CUSTOM123" maxlength="12" style="text-transform:uppercase" autocomplete="off">
+            <button class="addon-btn" id="btn-gen-id" title="Generate random ID">🔄</button>
+          </div>
+        </div>
+        <div class="form-grp">
+          <label class="field-label">Password <span class="opt">(optional)</span></label>
+          <input id="inp-create-pass" type="password" class="field-input" placeholder="Leave blank for open room" autocomplete="off">
+        </div>
+        <button id="btn-create" class="btn btn-primary btn-full">
+          <span>+</span> Create Room
+        </button>
+      </div>
+
+      <!-- Join Room -->
+      <div class="card">
+        <h2 class="card-title"><span class="ct-icon join-icon">→</span>Join Room</h2>
+        <div class="form-grp">
+          <label class="field-label">Room ID</label>
+          <input id="inp-join-id" type="text" class="field-input mono" placeholder="Enter room ID…" maxlength="12" style="text-transform:uppercase" autocomplete="off">
+        </div>
+        <div class="form-grp">
+          <label class="field-label">Password <span class="opt">(if required)</span></label>
+          <input id="inp-join-pass" type="password" class="field-input" placeholder="Leave blank if none" autocomplete="off">
+        </div>
+        <button id="btn-join" class="btn btn-secondary btn-full">
+          <span>→</span> Join Room
+        </button>
+      </div>
+    </div>
+
+    <!-- Feature strip -->
+    <ul class="feat-strip">
+      <li>🔒 E2E Encrypted</li>
+      <li>⚡ No file size limit</li>
+      <li>🌐 Any file type</li>
+      <li>👥 Multi-peer</li>
+      <li>📁 Folder support</li>
+    </ul>
+
+  </div>
+  <footer style="text-align:center;padding:20px;color:#888;border-top:1px solid rgba(255,255,255,.1)">Made by Dibya Jyoti</footer>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     ROOM SCREEN
+══════════════════════════════════════════════════════════ -->
+<div id="screen-room" class="screen">
+
+  <!-- Header -->
+  <header class="room-hdr">
+    <div class="rhdr-left">
+      <span class="logo-hex sm">⬡</span>
+      <span class="rhdr-name">ShareDrop</span>
+      <div class="room-badge">
+        <span class="rb-label">Room</span>
+        <span id="disp-room-id" class="rb-value mono">──────</span>
+        <span id="disp-lock-badge" class="lock-badge hidden">🔒</span>
+      </div>
+    </div>
+    <div class="rhdr-right">
+      <span id="conn-indicator" class="conn-indicator conn-connecting" title="Connection status">
+        <span class="conn-dot"></span>
+        <span id="conn-label" class="conn-txt">Connecting</span>
+      </span>
+      <button id="btn-copy-link" class="hdr-btn" title="Copy invite link">🔗</button>
+      <button id="btn-show-qr"   class="hdr-btn" title="Show QR code">◉</button>
+      <button id="btn-lock-room" class="hdr-btn host-ctrl hidden" title="Lock/unlock room">🔓</button>
+      <button id="btn-leave"     class="hdr-btn danger-btn" title="Leave room">✕ Leave</button>
+    </div>
+  </header>
+
+  <!-- Mobile tab bar -->
+  <nav class="tab-bar">
+    <button class="tab-btn active" data-tab="files">📂 Files</button>
+    <button class="tab-btn"        data-tab="users">👥 Users <span id="tab-user-count" class="tab-badge">0</span></button>
+    <button class="tab-btn"        data-tab="chat"> 💬 Chat  <span id="tab-chat-badge" class="tab-badge hidden">•</span></button>
+  </nav>
+
+  <!-- Room body: 3-column on desktop, tabbed on mobile -->
+  <div class="room-body">
+
+    <!-- ── Left: Users panel ── -->
+    <aside id="panel-users" class="side-panel tab-pane" data-tab="users">
+      <div class="panel-hdr">
+        <span>Participants</span>
+        <span id="user-count-badge" class="chip">0</span>
+      </div>
+      <div id="users-list" class="users-list"></div>
+    </aside>
+
+    <!-- ── Centre: Files panel ── -->
+    <main id="panel-files" class="main-panel tab-pane active" data-tab="files">
+
+      <!-- Drop zone -->
+      <div id="drop-zone" class="drop-zone">
+        <div class="dz-inner">
+          <div class="dz-icon-wrap"><span class="dz-icon">📂</span></div>
+          <p class="dz-title">Drop files or folders here</p>
+          <p class="dz-or">— or —</p>
+          <div class="dz-btns">
+            <button id="btn-pick-files"  class="btn btn-ghost">📎 Pick Files</button>
+            <button id="btn-pick-folder" class="btn btn-ghost">📁 Pick Folder</button>
+          </div>
+        </div>
+        <input id="inp-files"  type="file" multiple hidden>
+        <input id="inp-folder" type="file" webkitdirectory hidden>
+      </div>
+
+      <!-- Staged files (shown after picking) -->
+      <div id="staged-section" class="staged-section hidden">
+        <div class="staged-hdr">
+          <span id="staged-label" class="staged-label">0 files selected</span>
+          <div class="staged-actions">
+            <select id="sel-target" class="target-select">
+              <option value="all">👥 Everyone</option>
+            </select>
+            <button id="btn-send"         class="btn btn-primary">🚀 Send</button>
+            <button id="btn-clear-staged" class="btn-ghost-sm">✕ Clear</button>
+          </div>
+        </div>
+        <div id="staged-list" class="staged-list"></div>
+      </div>
+
+      <!-- Transfers list -->
+      <div class="xfer-section">
+        <div class="section-hdr">
+          <span>Transfers</span>
+          <span id="xfer-count" class="chip">0</span>
+        </div>
+        <div id="transfers-list">
+          <div id="xfer-empty" class="empty-state">
+            <span class="empty-icon">📭</span>
+            <p>No transfers yet</p>
+            <p class="empty-hint">Pick files above and send to peers.</p>
+          </div>
+        </div>
+      </div>
+
+    </main>
+
+    <!-- ── Right: Chat panel ── -->
+    <aside id="panel-chat" class="side-panel tab-pane" data-tab="chat">
+      <div class="panel-hdr"><span>Room Chat</span></div>
+      <div id="chat-messages" class="chat-msgs"></div>
+      <div class="chat-foot">
+        <div id="emoji-picker" class="emoji-tray hidden"></div>
+        <div class="chat-row">
+          <button id="btn-emoji"    class="ic-btn" title="Emoji">😊</button>
+          <input  id="inp-chat"     class="chat-inp" type="text" placeholder="Message…" maxlength="1000" autocomplete="off">
+          <button id="btn-chat-send" class="ic-btn accent-ic" title="Send">↑</button>
+        </div>
+      </div>
+    </aside>
+
+  </div><!-- /room-body -->
+
+  <footer style="text-align:center;padding:10px;color:#555;border-top:1px solid rgba(255,255,255,.05);font-size:12px">Made by Dibya Jyoti</footer>
+</div><!-- /screen-room -->
+
+<!-- ══════════════════════════════════════════════════════════
+     MODALS
+══════════════════════════════════════════════════════════ -->
+
+<!-- File offer modal -->
+<div id="modal-offer" class="overlay hidden" role="dialog" aria-modal="true">
+  <div class="modal-box">
+    <div class="modal-hdr">
+      <h3>📥 Incoming Transfer</h3>
+      <button class="close-btn" data-close="modal-offer">✕</button>
+    </div>
+    <div id="offer-body" class="modal-body"></div>
+    <div class="modal-foot">
+      <button id="btn-reject-offer" class="btn btn-danger">✕ Decline</button>
+      <button id="btn-accept-offer" class="btn btn-primary">✓ Accept All</button>
+    </div>
+  </div>
+</div>
+
+<!-- Preview modal -->
+<div id="modal-preview" class="overlay hidden" role="dialog" aria-modal="true">
+  <div class="modal-box modal-wide">
+    <div class="modal-hdr">
+      <span id="preview-fname" class="preview-title">─</span>
+      <button class="close-btn" data-close="modal-preview">✕</button>
+    </div>
+    <div id="preview-body" class="preview-body"></div>
+    <div class="modal-foot">
+      <a id="preview-dl" class="btn btn-secondary" download>⬇ Download</a>
+      <button class="close-btn-text" data-close="modal-preview">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- QR modal -->
+<div id="modal-qr" class="overlay hidden" role="dialog" aria-modal="true">
+  <div class="modal-box modal-qr">
+    <div class="modal-hdr">
+      <h3>Scan to Join</h3>
+      <button class="close-btn" data-close="modal-qr">✕</button>
+    </div>
+    <div class="qr-body">
+      <img id="qr-img" src="" alt="QR Code for room link" class="qr-img">
+      <p id="qr-link" class="qr-link"></p>
+      <button id="btn-copy-qr-link" class="btn btn-ghost" style="margin-top:8px">🔗 Copy Link</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     TOAST CONTAINER
+══════════════════════════════════════════════════════════ -->
+<div id="toasts" aria-live="polite"></div>
+
+<!-- ══════════════════════════════════════════════════════════
+     SCRIPTS  (no frameworks, no build step)
+══════════════════════════════════════════════════════════ -->
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+<script src="webrtc.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
